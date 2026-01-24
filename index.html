@@ -2058,7 +2058,7 @@ if (!checkCollision(testPosZ)) {
     
     /* ================= MULTIPLAYER SYSTEM ================= */
 function connectMultiplayer() {
-  const serverURL = 'wss://oyun-sunucusu-1.onrender.com'; // if you mess up with this you would kill all the multiplayer stuff (just saying) dsıjfhnsdajfg
+  const serverURL = 'wss://game-experiment-4r1x.onrender.com'; // if you mess up with this you would kill all the multiplayer stuff (just saying) dsıjfhnsdajfg
   
   try {
     ws = new WebSocket(serverURL);
@@ -2250,13 +2250,14 @@ function updateOtherPlayer(data) {
     });
   }
   
-  
+  // NEW: Sync game time
   if (data.gameTime !== undefined && Math.abs(data.gameTime - gameTime) > 0.5) {
     gameTime = data.gameTime;
   }
   
   otherPlayer.lastUpdate = Date.now();
   
+  // Make name tag always face camera
   if (otherPlayer.nameTag) {
     otherPlayer.nameTag.lookAt(camera.position);
   }
