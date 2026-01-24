@@ -1,15 +1,11 @@
 {
-  "name": "Deneme-oyun-server",
+  "name": "game-server",
   "version": "1.0.0",
-  "description": "Multiplayer game test made by eren",
-  "main": "server.js",
+  "dependencies": {
+    "ws": "^8.14.2",
+    "express": "^4.18.2"
+  },
   "scripts": {
     "start": "node server.js"
-  },
-  "dependencies": {
-    "ws": "^8.14.2"
-  },
-  "engines": {
-    "node": ">=14.0.0"
   }
 }
