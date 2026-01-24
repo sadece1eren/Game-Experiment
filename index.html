@@ -2066,63 +2066,104 @@ function connectMultiplayer() {
   
   try {
     ws = new WebSocket(serverURL);
-    
+	const connectionTimeout = setTimeout(() => {
+  if (ws.readyState !== WebSocket.OPEN) {
+    console.log('⏱️ Connection timeout');
+    ws.close();
+  }
+}, 10000);
+   
     ws.onopen = () => {
-      isConnected = true;
-      document.getElementById('mp-status').textContent = 'Status: Connected';
-      document.getElementById('mp-status').style.color = '#00ff00';
-      
-      // Send join message
-ws.send(JSON.stringify({
-  type: 'join',
-  name: playerName,
-  position: {
-    x: playerGroup.position.x,
-    y: playerGroup.position.y,
-    z: playerGroup.position.z
-  },
-  rotation: { y: yaw },
-  gameTime: gameTime,
-  secretMode: secretMode,
-  inCar: inCar,
-  headlightsOn: headlightsOn
-}));
-      
-      console.log('Connected to multiplayer server');
+  clearTimeout(connectionTimeout);
+  isConnected = true;
+  console.log('✅ WebSocket connected successfully');
+  document.getElementById('mp-status').textContent = 'Status: Connected';
+  document.getElementById('mp-status').style.color = '#00ff00';
+  setTimeout(() => {
+    const joinMsg = {
+      type: 'join',
+      name: playerName,
+      position: {
+        x: playerGroup.position.x,
+        y: playerGroup.position.y,
+        z: playerGroup.position.z
+      },
+      rotation: { y: yaw },
+      gameTime: gameTime,
+      secretMode: secretMode,
+      inCar: inCar,
+      headlightsOn: headlightsOn
     };
     
-    ws.onmessage = (event) => {
-      const msg = JSON.parse(event.data);
-      
-	  if (msg.type === 'mineBlock') {
-  if (msg.name !== playerName) {
-    console.log(msg.name + ' mined block at', msg.position);
-    for (let i = voxelData.length - 1; i >= 0; i--) {
-      const voxel = voxelData[i];
-      if (voxel.x === msg.position.x && voxel.y === msg.position.y && voxel.z === msg.position.z) {
-        scene.remove(voxel.mesh);
-        const boxIndex = collisionBoxes.findIndex(box => 
-          box.containsPoint(voxel.mesh.position)
-        );
-        if (boxIndex !== -1) collisionBoxes.splice(boxIndex, 1);
-        voxelData.splice(i, 1);
-        console.log('Block removed for', msg.name);
-        break;
+    console.log('📤 Sending join message:', joinMsg);
+    ws.send(JSON.stringify(joinMsg));
+  }, 100);
+};
+    
+ws.onmessage = (event) => {
+  console.log('📨 Raw message received:', event.data);
+  
+  try {
+    const msg = JSON.parse(event.data);
+    console.log('📦 Parsed message:', msg.type, msg);
+    
+    if (msg.type === 'mineBlock') {
+      if (msg.name !== playerName) {
+        console.log(msg.name + ' mined block at', msg.position);
+        for (let i = voxelData.length - 1; i >= 0; i--) {
+          const voxel = voxelData[i];
+          if (voxel.x === msg.position.x && voxel.y === msg.position.y && voxel.z === msg.position.z) {
+            scene.remove(voxel.mesh);
+            const boxIndex = collisionBoxes.findIndex(box => 
+              box.containsPoint(voxel.mesh.position)
+            );
+            if (boxIndex !== -1) collisionBoxes.splice(boxIndex, 1);
+            voxelData.splice(i, 1);
+            console.log('Block removed for', msg.name);
+            break;
+          }
+        }
       }
     }
-  }
-}
-	  
-      if (msg.type === 'playerJoined' || msg.type === 'playerUpdate') {
+    
+    if (msg.type === 'playerJoined') {
+      console.log('👤 Player joined:', msg.player.name);
+      if (msg.player && msg.player.name !== playerName) {
+        updateOtherPlayer(msg.player);
+      }
+    }
+    
+    if (msg.type === 'playerUpdate' || msg.type === 'update') {
+      if (msg.player) {
         if (msg.player.name !== playerName) {
           updateOtherPlayer(msg.player);
         }
+      } else if (msg.name && msg.name !== playerName) {
+        // Handle direct update format
+        updateOtherPlayer(msg);
       }
-      
-      if (msg.type === 'playerLeft') {
-        removeOtherPlayer(msg.name);
+    }
+    
+    if (msg.type === 'playerLeft') {
+      console.log('👋 Player left:', msg.name);
+      removeOtherPlayer(msg.name);
+    }
+    
+    if (msg.type === 'playerList') {
+      console.log('📋 Received player list:', msg.players);
+      if (msg.players) {
+        msg.players.forEach(player => {
+          if (player.name !== playerName) {
+            updateOtherPlayer(player);
+          }
+        });
       }
-    };
+    }
+    
+  } catch (e) {
+    console.error('❌ Error parsing message:', e, event.data);
+  }
+};
     
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
