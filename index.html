@@ -217,6 +217,18 @@ const interiorLight3 = new THREE.PointLight(0xffeecc, 1, 8);
 interiorLight3.position.set(3, 3, -3);
 scene.add(interiorLight3);
 
+const sunMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(5, 16, 16),
+  new THREE.MeshBasicMaterial({ color: 0xffff00, emissive: 0xffff00 })
+);
+scene.add(sunMesh);
+
+const moonMesh = new THREE.Mesh(
+  new THREE.SphereGeometry(4, 16, 16),
+  new THREE.MeshBasicMaterial({ color: 0xccccff, emissive: 0x8888cc })
+);
+scene.add(moonMesh);
+
 function updateDayNightCycle() {
   gameTime += timeSpeed;
   if (gameTime >= 24) gameTime = 0;
@@ -276,6 +288,16 @@ function updateDayNightCycle() {
   const sunAngle = (gameTime / 24) * Math.PI * 2 - Math.PI / 2;
   sun.position.x = Math.cos(sunAngle) * 50;
   sun.position.y = Math.sin(sunAngle) * 100 + 20;
+  const sunAngle = (gameTime / 24) * Math.PI * 2 - Math.PI / 2;
+  sun.position.x = Math.cos(sunAngle) * 50;
+  sun.position.y = Math.sin(sunAngle) * 100 + 20;
+  sunMesh.position.copy(sun.position);
+  const moonAngle = sunAngle + Math.PI;
+  moonMesh.position.x = Math.cos(moonAngle) * 50;
+  moonMesh.position.y = Math.sin(moonAngle) * 100 + 20;
+  moonMesh.position.z = 30;
+  sunMesh.visible = sun.position.y > 0;
+  moonMesh.visible = sun.position.y <= 0;
 }
 
 // Helper function for smooth color transitions
@@ -1395,22 +1417,37 @@ for (let i = 0; i < 5; i++) {
 function updateAnimals() {
   animals.forEach(animal => {
     animal.wanderTimer++;
-    
-    if (animal.wanderTimer > 120) {
-      animal.wanderAngle += (Math.random() - 0.5) * 0.5;
+    if (animal.wanderTimer > 60 + Math.random() * 60) {
+      animal.wanderAngle += (Math.random() - 0.5) * 0.8;
       animal.wanderTimer = 0;
+      animal.isPaused = Math.random() < 0.3;
+      animal.pauseTime = Math.random() * 100;
     }
-    
-    const speed = animal.type === 'horse' ? 0.03 : 0.02;
+    if (animal.isPaused) {
+      animal.pauseTime--;
+      if (animal.pauseTime <= 0) {
+        animal.isPaused = false;
+      }
+      return;
+    }
+    const baseSpeed = animal.type === 'horse' ? 0.04 : 0.025;
+    const speed = baseSpeed * (0.8 + Math.random() * 0.4); // Speed varies
+    const wobble = Math.sin(animal.wanderTimer * 0.1) * 0.01;
     animal.group.position.x += Math.cos(animal.wanderAngle) * speed;
     animal.group.position.z += Math.sin(animal.wanderAngle) * speed;
-    animal.group.rotation.y = animal.wanderAngle;
-    
-    // Keep in bounds
+    const targetRotation = animal.wanderAngle;
+    const currentRotation = animal.group.rotation.y;
+    animal.group.rotation.y += (targetRotation - currentRotation) * 0.1;
     const maxDist = 80;
     const dist = Math.sqrt(animal.group.position.x ** 2 + animal.group.position.z ** 2);
     if (dist > maxDist) {
-      animal.wanderAngle = Math.atan2(-animal.group.position.z, -animal.group.position.x);
+      const angleToCenter = Math.atan2(-animal.group.position.z, -animal.group.position.x);
+      animal.wanderAngle = angleToCenter + (Math.random() - 0.5) * 0.5;
+    }
+    if (animal.type === 'horse') {
+      animal.group.position.y = Math.sin(animal.wanderTimer * 0.2) * 0.05;
+    } else {
+      animal.group.position.y = Math.sin(animal.wanderTimer * 0.15) * 0.03;
     }
   });
 }
@@ -1893,33 +1930,33 @@ if (keys["KeyW"]) {
         camera.rotation.y = yaw;
         camera.rotation.x = pitch;
       
-      // Movement
-      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-      forward.y = 0;
-      forward.normalize();
-      const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-      right.y = 0;
-      right.normalize();
-      
-      let moving = false;
-      const newPos = playerGroup.position.clone();
-      
-      if (keys["KeyW"]) {
-        newPos.addScaledVector(forward, speed);
-        moving = true;
-      }
-      if (keys["KeyS"]) {
-        newPos.addScaledVector(forward, -speed);
-        moving = true;
-      }
-      if (keys["KeyA"]) {
-        newPos.addScaledVector(right, -speed);
-        moving = true;
-      }
-      if (keys["KeyD"]) {
-        newPos.addScaledVector(right, speed);
-        moving = true;
-      }
+  // Movement stuff
+const forward = new THREE.Vector3();
+const right = new THREE.Vector3();
+camera.getWorldDirection(forward);
+forward.y = 0;
+forward.normalize();
+right.crossVectors(camera.up, forward).normalize();
+
+let moving = false;
+const newPos = playerGroup.position.clone();
+
+if (keys["KeyW"]) {
+  newPos.addScaledVector(forward, speed);
+  moving = true;
+}
+if (keys["KeyS"]) {
+  newPos.addScaledVector(forward, -speed);
+  moving = true;
+}
+if (keys["KeyA"]) {
+  newPos.addScaledVector(right, speed);
+  moving = true;
+}
+if (keys["KeyD"]) {
+  newPos.addScaledVector(right, -speed);
+  moving = true;
+}
       
       // JUMP - Handle space bar press
       if (keys["Space"] && isOnGround) {
