@@ -288,6 +288,9 @@ function updateDayNightCycle() {
   const sunAngle = (gameTime / 24) * Math.PI * 2 - Math.PI / 2;
   sun.position.x = Math.cos(sunAngle) * 50;
   sun.position.y = Math.sin(sunAngle) * 100 + 20;
+  const sunAngle = (gameTime / 24) * Math.PI * 2 - Math.PI / 2;
+  sun.position.x = Math.cos(sunAngle) * 50;
+  sun.position.y = Math.sin(sunAngle) * 100 + 20;
   sunMesh.position.copy(sun.position);
   const moonAngle = sunAngle + Math.PI;
   moonMesh.position.x = Math.cos(moonAngle) * 50;
@@ -1427,14 +1430,12 @@ function updateAnimals() {
       }
       return;
     }
-    const baseSpeed = animal.type === 'horse' ? 0.04 : 0.025;
-    const speed = baseSpeed * (0.8 + Math.random() * 0.4); // Speed varies
-    const wobble = Math.sin(animal.wanderTimer * 0.1) * 0.01;
-    animal.group.position.x += Math.cos(animal.wanderAngle) * speed;
-    animal.group.position.z += Math.sin(animal.wanderAngle) * speed;
-    const targetRotation = animal.wanderAngle;
-    const currentRotation = animal.group.rotation.y;
-    animal.group.rotation.y += (targetRotation - currentRotation) * 0.1;
+const baseSpeed = animal.type === 'horse' ? 0.04 : 0.025;
+const speed = baseSpeed * (0.8 + Math.random() * 0.4);
+animal.group.position.x += Math.cos(animal.wanderAngle) * speed;
+animal.group.position.z += Math.sin(animal.wanderAngle) * speed;
+// Fix rotation to match movement direction
+animal.group.rotation.y = animal.wanderAngle;
     const maxDist = 80;
     const dist = Math.sqrt(animal.group.position.x ** 2 + animal.group.position.z ** 2);
     if (dist > maxDist) {
@@ -1867,13 +1868,11 @@ if (keys["KeyE"] && distanceToCar < 3) {
         playerGroup.visible = false;
         
 if (keys["KeyW"]) {
-  carVelocity.z = -carSpeed; // Forward
+  carVelocity.z = carSpeed;
   if (Math.random() < 0.1) playTireSound();
 } else if (keys["KeyS"]) {
-  carVelocity.z = carSpeed * 0.5; // Backward
+  carVelocity.z = -carSpeed * 0.5; 
   if (Math.random() < 0.1) playTireSound();
-} else {
-  carVelocity.z *= 0.95;
 }
         
         if (keys["KeyA"]) {
