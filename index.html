@@ -288,9 +288,6 @@ function updateDayNightCycle() {
   const sunAngle = (gameTime / 24) * Math.PI * 2 - Math.PI / 2;
   sun.position.x = Math.cos(sunAngle) * 50;
   sun.position.y = Math.sin(sunAngle) * 100 + 20;
-  const sunAngle = (gameTime / 24) * Math.PI * 2 - Math.PI / 2;
-  sun.position.x = Math.cos(sunAngle) * 50;
-  sun.position.y = Math.sin(sunAngle) * 100 + 20;
   sunMesh.position.copy(sun.position);
   const moonAngle = sunAngle + Math.PI;
   moonMesh.position.x = Math.cos(moonAngle) * 50;
