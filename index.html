@@ -1720,18 +1720,18 @@ function checkCollision(newPos) {
       
       let minedSomething = false;
       
-      // Check voxels
-      for (let i = voxelData.length - 1; i >= 0; i--) {
-        const voxel = voxelData[i];
-        const hits = raycaster.intersectObject(voxel.mesh);
-        if (hits.length > 0 && hits[0].distance < 5) {
- if (voxel.type === 'stone') {
-  inventory.stone++;
-} else if (voxel.type === 'wood') {
-  inventory.wood++;
-} else if (voxel.type === 'leaf') {
-  inventory.leaf++;
-}
+   // Check voxels
+for (let i = voxelData.length - 1; i >= 0; i--) {
+  const voxel = voxelData[i];
+  const hits = raycaster.intersectObject(voxel.mesh);
+  if (hits.length > 0 && hits[0].distance < 5) {
+    if (voxel.type === 'stone') {
+      inventory.stone++;
+    } else if (voxel.type === 'wood') {
+      inventory.wood++;
+    } else if (voxel.type === 'leaf') {
+      inventory.leaf++;
+    }
     
     // Send to server BEFORE removing
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -1741,22 +1741,19 @@ function checkCollision(newPos) {
         position: { x: voxel.x, y: voxel.y, z: voxel.z }
       }));
     }
+    
+    scene.remove(voxel.mesh);
+    const boxIndex = collisionBoxes.findIndex(box => 
+      box.containsPoint(voxel.mesh.position)
+    );
+    if (boxIndex !== -1) collisionBoxes.splice(boxIndex, 1);
+    
+    voxelData.splice(i, 1);
+    updateInventoryDisplay();
+    minedSomething = true;
+    break;
   }
 }
-          }
-          
-          scene.remove(voxel.mesh);
-          const boxIndex = collisionBoxes.findIndex(box => 
-            box.containsPoint(voxel.mesh.position)
-          );
-          if (boxIndex !== -1) collisionBoxes.splice(boxIndex, 1);
-          
-          voxelData.splice(i, 1);
-          updateInventoryDisplay();
-          minedSomething = true;
-          break;
-        }
-      }
       
       // Check trees
       trees.forEach((tree, treeIndex) => {
