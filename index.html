@@ -2034,23 +2034,50 @@ if (!checkCollision(testPosZ)) {
       }
       
       // Hand animation
-      if (swing > 0) {
-        const swingAngle = Math.sin(swing * Math.PI) * 1.5;
-        hand.rotation.x = 0.3 + swingAngle;
-        toolHandle.rotation.z = -0.5 + swingAngle;
-        toolHead.rotation.z = -0.5 + swingAngle;
-        
-        // Animate third person arms when swinging
-        if (isThirdPerson) {
-          rightArm.rotation.x = -Math.PI / 2 + swingAngle;
-        }
-        
-        swing -= 0.15;
-      } else {
-        hand.rotation.x = 0.3;
-        toolHandle.rotation.z = -0.5;
-        toolHead.rotation.z = -0.5;
-      }
+if (swing > 0) {
+  const swingProgress = swing;
+  const swingAngle = Math.sin(swingProgress * Math.PI);
+  if (swingProgress > 0.7) {
+    hand.rotation.x = 0.3 - swingAngle * 0.8;
+    hand.position.y = -0.4 + swingAngle * 0.2;
+    hand.position.z = -0.8 + swingAngle * 0.1;
+    toolHandle.rotation.z = -0.5 - swingAngle * 0.3;
+    toolHead.rotation.z = -0.5 - swingAngle * 0.3;
+  } else if (swingProgress > 0.3) {
+    const fastSwing = (0.7 - swingProgress) / 0.4;
+    hand.rotation.x = 0.3 + fastSwing * 2.5;
+    hand.position.y = -0.4 - fastSwing * 0.3;
+    hand.position.z = -0.8 - fastSwing * 0.2;
+    toolHandle.rotation.z = -0.5 + fastSwing * 1.8;
+    toolHead.rotation.z = -0.5 + fastSwing * 1.8;
+  } else {
+    const returnSwing = swingProgress / 0.3;
+    hand.rotation.x = 0.3 + (1 - returnSwing) * 2.5;
+    hand.position.y = -0.4 - (1 - returnSwing) * 0.3;
+    hand.position.z = -0.8 - (1 - returnSwing) * 0.2;
+    toolHandle.rotation.z = -0.5 + (1 - returnSwing) * 1.8;
+    toolHead.rotation.z = -0.5 + (1 - returnSwing) * 1.8;
+  }
+  if (isThirdPerson) {
+    rightArm.rotation.x = -Math.PI / 2 + swingAngle * 1.5;
+  }
+  
+  swing -= 0.12; 
+} else {
+  hand.rotation.x = 0.3;
+  hand.position.y = -0.4;
+  hand.position.z = -0.8;
+  toolHandle.rotation.z = -0.5;
+  toolHead.rotation.z = -0.5;
+}
+} else {
+  const idleSway = Math.sin(Date.now() * 0.001) * 0.02;
+  hand.rotation.x = 0.3 + idleSway;
+  hand.position.y = -0.4 + idleSway * 0.5;
+  hand.position.z = -0.8;
+  toolHandle.rotation.z = -0.5 + idleSway;
+  toolHead.rotation.z = -0.5 + idleSway;
+}
       
       renderer.render(scene, camera);
     }
